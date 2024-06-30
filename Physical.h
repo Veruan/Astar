@@ -21,6 +21,14 @@ class Physical
 		Physical(int size_x, int size_y);
 
 		~Physical();
+
+		std::pair<int, int> get_start() const;
+
+		std::pair<int, int> get_end() const;
+
+		int get_size_x() const;
+
+		int get_size_y() const;
 };
 
 #endif

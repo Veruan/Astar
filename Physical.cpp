@@ -15,3 +15,27 @@ Physical::~Physical()
 {
 
 }
+
+
+std::pair<int, int> Physical::get_start() const
+{
+	return this->start;
+}
+
+
+std::pair<int, int> Physical::get_end() const
+{
+	return this->end;
+}
+
+
+int Physical::get_size_x() const
+{
+	return this->size_x;
+}
+
+
+int Physical::get_size_y() const
+{
+	return this->size_y;
+}

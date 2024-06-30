@@ -1,11 +1,9 @@
 #include "Commander.h"
 
-Commander::Commander()
-{
-	this->screen = std::make_shared<Screen>();
 
-	this->physical = std::make_shared<Physical>(10, 10);
-}
+// should be stack allocated 
+Commander::Commander() : screen(600, 400), physical(10, 10)
+{}
 
 Commander::~Commander()
 {

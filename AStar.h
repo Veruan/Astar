@@ -2,31 +2,40 @@
 #define ASTAR_ASTAR_H
 
 #include <vector>
+#include <memory>
 
-void Astar(const std::pair<int, int>& start, const std::pair<int, int>& end, const std::vector<std::vector<bool>>& physical_layer);
+#include "Physical.h"
+
+const std::pair<int, int> start_parent = { -2, -2 };
+
+void Astar(const Physical& physical);
+
+double fcost(const std::pair<int, int>& position, const std::pair<int, int>& start, const std::pair<int, int>& end);
+
+double gcost(const std::pair<int, int>& position, const std::pair<int, int>& start);
+double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end);
 
 
 class Node
 {
 	private:
 
-		std::pair<int, int> position;
+		const std::pair<int, int> position;
+		const std::pair<int, int> parent;
 
-		int cost;
-
-		std::pair<int, int> parent;
+		const double cost;
 
 	public:
 
-		Node();
+		Node(const std::pair<int, int>& position, const std::pair<int, int>& parent, const double cost);
 
 		~Node();
 
-		const std::pair<int, int> get_parent();
+		const std::pair<int, int>& get_position();
 
-		void calc_cost(const std::pair<int, int>& start, const std::pair<int, int>& end);
+		const std::pair<int, int>& get_parent();
 
-		int get_cost() const;
+		double get_cost() const;
 };
 
 
@@ -34,8 +43,8 @@ class Heap
 {
 	private:
 
-		size_t size;
-		std::vector<Node> elements;
+		int size;
+		std::vector<Node *> elements;
 
 	public:
 
@@ -43,15 +52,17 @@ class Heap
 
 		~Heap();
 
-		void check_bounds(bool& left, bool& right, int index);
+		bool empty();
+
+		void check_bounds(bool& left, bool& right, int index) const;
 
 		void heapify_down(int index);
 
 		void heapify_up(int index);
 
-		void insert(const Node&);
+		void insert(const std::pair<int, int>& position, const std::pair<int, int>& parent, const double cost);
 
-		Node& extract_min();
+		Node* extract_min();
 };
 
 #endif
