@@ -9,7 +9,9 @@ void Astar(const Physical& physical)
 	std::vector<Node*> path;
 
 	{
-		bool** visited = allocate_2d_array(physical.get_size_x(), physical.get_size_y());
+		bool **visited = allocate_2d_array(physical.get_size_x(), physical.get_size_y());
+		bool **added = allocate_2d_array(physical.get_size_x(), physical.get_size_y());
+
 		std::unique_ptr<Heap> priority_queue = std::make_unique<Heap>();
 		std::vector<Node*> neighbors;
 
@@ -26,7 +28,7 @@ void Astar(const Physical& physical)
 			if (physical.get_grid(position) == END)
 				break;
 		
-			get_neighbors(current, neighbors, visited, physical);
+			get_neighbors(current, neighbors, visited, added, physical);
 			for(Node* node : neighbors)
 			{
 				node->add_cost(hcost(node->get_position(), physical.get_end()));
@@ -37,6 +39,7 @@ void Astar(const Physical& physical)
 		}
 
 		delete_2d_array(physical.get_size_x(), physical.get_size_y(), &visited);
+		delete_2d_array(physical.get_size_x(), physical.get_size_y(), &added);
 	}
 	
 	reconstruct_path(used, path);
@@ -52,7 +55,7 @@ void Astar(const Physical& physical)
 }
 
 
-void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool **visited, const Physical& physical)
+void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool** visited, bool** added, const Physical& physical)
 {
 	std::pair<int, int> position = current->get_position();
 
@@ -60,10 +63,12 @@ void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool **visited,
 	{
 		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
 
-		if(check_bounds(new_position, physical) && !visited[new_position.second][new_position.first])
+		if(check_bounds(new_position, physical) && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
 		{
 			Node* neighbor = new Node(new_position, current, current->get_cost() + 10);
 			neighbors.push_back(neighbor);
+
+			added[new_position.second][new_position.first] = true;
 		}
 	}
 
@@ -71,10 +76,12 @@ void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool **visited,
 	{
 		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
 
-		if (check_bounds(new_position, physical) && !visited[new_position.second][new_position.first])
+		if (check_bounds(new_position, physical) && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
 		{
 			Node* neighbor = new Node(new_position, current, current->get_cost() + 14);
 			neighbors.push_back(neighbor);
+
+			added[new_position.second][new_position.first] = true;
 		}
 	}
 }

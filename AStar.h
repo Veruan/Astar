@@ -73,7 +73,7 @@ void Astar(const Physical& physical);
 
 
 
-void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool** visited, const Physical& physical);
+void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool **visited, bool **added, const Physical& physical);
 bool check_bounds(std::pair<int, int>& position, const Physical& physical);
 
 
