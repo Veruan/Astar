@@ -9,8 +9,8 @@ int main(int argc, char *argv[])
 	//Commander commander;
 	Physical physical(10, 10);
 
-	physical.set_end({ 7, 7 });
-	physical.set_start({ 0, 0 });
+	physical.set_end({ 4, 7 });
+	physical.set_start({ 8, 4 });
 
 	Astar(physical);
 

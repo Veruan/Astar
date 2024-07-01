@@ -41,17 +41,13 @@ void Astar(const Physical& physical)
 	
 	reconstruct_path(used, path);
 
+	for (int i = path.size() - 1; i >= 0; i--)
+		std::cout << path[i]->get_position().first << ", " << path[i]->get_position().second << '\n';
+
 	for (Node* element : used)
 		delete element;
 
 	used.clear();
-
-	for (int i = path.size() - 1; i >= 0; i--)
-		std::cout << path[i]->get_position().first << ", " << path[i]->get_position().second << '\n';
-
-	for (Node* element : path)
-		delete element;
-
 	path.clear();
 }
 
@@ -75,7 +71,7 @@ void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool **visited,
 	{
 		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
 
-		if (check_bounds(position, physical) && !visited[new_position.second][new_position.first])
+		if (check_bounds(new_position, physical) && !visited[new_position.second][new_position.first])
 		{
 			Node* neighbor = new Node(new_position, current, current->get_cost() + 14);
 			neighbors.push_back(neighbor);
@@ -103,14 +99,15 @@ double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end
 
 void reconstruct_path(std::vector<Node*>& used, std::vector<Node*>& path)
 {
-	Node* current = used[0];
+	Node* current = used[used.size() - 1];
 	while (true)
 	{
+		path.push_back(current);
+
 		// start reached
-		if (current->get_parent() == nullptr) 
+		if (current->get_parent() == nullptr)
 			break;
 
-		path.push_back(current);
 		current = current->get_parent();
 	}
 }

@@ -10,7 +10,7 @@ Physical::Physical(int size_x, int size_y) : size_x(size_x), size_y(size_y), sta
 	}
 
 	this->grid[start.second][start.first] = '2';
-	this->grid[end.second][end.first] = '4';
+	this->grid[end.second][end.first] = '3';
 }
 
 
@@ -22,13 +22,19 @@ Physical::~Physical()
 
 void Physical::set_start(const std::pair<int, int>& position)
 {
+	this->grid[this->start.second][this->start.first] = '0';
+
 	this->start = position;
+	this->grid[position.second][position.first] = '2';
 }
 
 
 void Physical::set_end(const std::pair<int, int>& position)
 {
+	this->grid[this->end.second][this->end.first] = '0';
+
 	this->end = position;
+	this->grid[position.second][position.first] = '3';
 }
 
 
