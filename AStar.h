@@ -1,19 +1,17 @@
 #ifndef ASTAR_ASTAR_H
 #define ASTAR_ASTAR_H
 
+#include <iostream>
 #include <vector>
 #include <memory>
 
 #include "Physical.h"
 
-const std::pair<int, int> start_parent = { -2, -2 };
+const char END = '3';
 
-void Astar(const Physical& physical);
-
-double fcost(const std::pair<int, int>& position, const std::pair<int, int>& start, const std::pair<int, int>& end);
-
-double gcost(const std::pair<int, int>& position, const std::pair<int, int>& start);
-double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end);
+// left, top, bottom, right, top-left, bottom-left, top-right, bottom-right
+const int x_offset[] = {-1, 0, 0, 1, -1, -1, 1, 1};
+const int y_offset[] = {0, -1, 1, 0, -1, 1, -1, 1};
 
 
 class Node
@@ -21,19 +19,21 @@ class Node
 	private:
 
 		const std::pair<int, int> position;
-		const std::pair<int, int> parent;
+		Node *parent;
 
-		const double cost;
+		double cost;
 
 	public:
 
-		Node(const std::pair<int, int>& position, const std::pair<int, int>& parent, const double cost);
+		Node(const std::pair<int, int>& position, Node* parent, double cost);
 
 		~Node();
 
-		const std::pair<int, int>& get_position();
+		void add_cost(double hcost);
 
-		const std::pair<int, int>& get_parent();
+		const std::pair<int, int>& get_position() const;
+
+		Node* get_parent() const;
 
 		double get_cost() const;
 };
@@ -60,9 +60,26 @@ class Heap
 
 		void heapify_up(int index);
 
-		void insert(const std::pair<int, int>& position, const std::pair<int, int>& parent, const double cost);
+		void insert(const std::pair<int, int>& position, Node* parent, const double cost);
+
+		void insert(Node* node);
 
 		Node* extract_min();
 };
+
+
+
+void Astar(const Physical& physical);
+
+
+
+void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool** visited, const Physical& physical);
+bool check_bounds(std::pair<int, int>& position, const Physical& physical);
+
+
+double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end);
+
+
+void reconstruct_path(std::vector<Node*>& used, std::vector<Node*>& path);
 
 #endif

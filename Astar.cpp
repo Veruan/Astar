@@ -1,69 +1,122 @@
+#include <cmath>
+
 #include "AStar.h"
+#include "utility.h"
 
 void Astar(const Physical& physical)
 {
-	Heap priority_queue;
 	std::vector<Node*> used;
+	std::vector<Node*> path;
 
-	bool** visited = new bool* [physical.get_size_y()];
-		for (int i = 0; i < physical.get_size_y(); i++)
-			visited[i] = new bool [physical.get_size_x()];
-
-	priority_queue.insert(physical.get_start(), start_parent, 0);
-	
-	while (!priority_queue.empty())
 	{
-		Node* current = priority_queue.extract_min();
-		std::pair<int, int> position = current->get_position();
+		bool** visited = allocate_2d_array(physical.get_size_x(), physical.get_size_y());
+		std::unique_ptr<Heap> priority_queue = std::make_unique<Heap>();
+		std::vector<Node*> neighbors;
 
-		used.push_back(current);
-		visited[position.second][position.first] = true;
-
-		if (current->get_position() == physical.get_end())
-			break;
-		
-		for (int i = 0; i < 8; i++)
+		priority_queue->insert(physical.get_start(), nullptr, 0);
+	
+		while (!priority_queue->empty())
 		{
-			if (visited[position.second][position.first])
-				continue;
+			Node* current = priority_queue->extract_min();
+			std::pair<int, int> position = current->get_position();
 
-			// calculate cost
-			// priority_queue.insert(position, current.get_position(), cost);
+			used.push_back(current);
+			visited[position.second][position.first] = true;
+
+			if (physical.get_grid(position) == END)
+				break;
+		
+			get_neighbors(current, neighbors, visited, physical);
+			for(Node* node : neighbors)
+			{
+				node->add_cost(hcost(node->get_position(), physical.get_end()));
+				priority_queue->insert(node);
+			}
+
+			neighbors.clear();
 		}
+
+		delete_2d_array(physical.get_size_x(), physical.get_size_y(), &visited);
 	}
-
-	for (int i = 0; i < physical.get_size_y(); i++)
-		delete[] visited[i];
-	delete[] visited;
-
-	//reconstruct_path;
+	
+	reconstruct_path(used, path);
 
 	for (Node* element : used)
 		delete element;
 
 	used.clear();
+
+	for (int i = path.size() - 1; i >= 0; i--)
+		std::cout << path[i]->get_position().first << ", " << path[i]->get_position().second << '\n';
+
+	for (Node* element : path)
+		delete element;
+
+	path.clear();
 }
 
 
-double fcost(const std::pair<int, int>& position, const std::pair<int, int>& start, const std::pair<int, int>& end)
+void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool **visited, const Physical& physical)
 {
-	return 0;
+	std::pair<int, int> position = current->get_position();
+
+	for (int i = 0; i < 4; i++)
+	{
+		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
+
+		if(check_bounds(new_position, physical) && !visited[new_position.second][new_position.first])
+		{
+			Node* neighbor = new Node(new_position, current, current->get_cost() + 10);
+			neighbors.push_back(neighbor);
+		}
+	}
+
+	for (int i = 4; i < 8; i++)
+	{
+		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
+
+		if (check_bounds(position, physical) && !visited[new_position.second][new_position.first])
+		{
+			Node* neighbor = new Node(new_position, current, current->get_cost() + 14);
+			neighbors.push_back(neighbor);
+		}
+	}
 }
 
 
-double gcost(const std::pair<int, int>& position, const std::pair<int, int>& start)
+bool check_bounds(std::pair<int, int>&position, const Physical& physical)
 {
-	return 0;
+	bool x = false, y = false;
+
+	x = (position.first >= 0 && position.first <= physical.get_size_x() - 1);
+	y = (position.second >= 0 && position.second <= physical.get_size_y() - 1);
+
+	return (x && y);
 }
 
 
 double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end)
 {
-	return 0;
+	return sqrt(pow(end.first - position.first, 2) + pow(end.second - position.second, 2));
 }
 
 
-Node::Node(const std::pair<int, int>& position, const std::pair<int, int>& parent, const double cost) : position(position), parent(parent), cost(cost)
+void reconstruct_path(std::vector<Node*>& used, std::vector<Node*>& path)
+{
+	Node* current = used[0];
+	while (true)
+	{
+		// start reached
+		if (current->get_parent() == nullptr) 
+			break;
+
+		path.push_back(current);
+		current = current->get_parent();
+	}
+}
+
+
+Node::Node(const std::pair<int, int>& position, Node *parent, double gcost) : position(position), parent(parent), cost(gcost)
 {}
 
 
@@ -71,13 +124,19 @@ Node::~Node()
 {}
 
 
-const std::pair<int, int>& Node::get_position()
+void Node::add_cost(double hcost)
+{
+	this->cost += hcost;
+}
+
+
+const std::pair<int, int>& Node::get_position() const
 {
 	return this->position;
 }
 
 
-const std::pair<int, int>& Node::get_parent()
+Node* Node::get_parent() const
 {
 	return this->parent;
 }
@@ -179,11 +238,20 @@ void Heap::heapify_up(int index)
 }
 
 
-void Heap::insert(const std::pair<int, int>& position, const std::pair<int, int>& parent, const double cost)
+void Heap::insert(const std::pair<int, int>& position, Node *parent, const double cost)
 {
 	Node* element = new Node(position, parent, cost);
 
 	this->elements.push_back(element);
+	this->size++;
+
+	this->heapify_up(this->size - 1);
+}
+
+
+void Heap::insert(Node* node)
+{
+	this->elements.push_back(node);
 	this->size++;
 
 	this->heapify_up(this->size - 1);
@@ -195,7 +263,7 @@ Node* Heap::extract_min()
 	if (this->size == 0)
 		return nullptr;
 
-	Node *smallest = this->elements[this->size - 1];
+	Node *smallest = this->elements[0];
 
 	this->elements[0] = this->elements[this->size - 1];
 
@@ -206,11 +274,3 @@ Node* Heap::extract_min()
 
 	return smallest;
 }
-
-//priority Q
-
-
-//heuristic function
-
-
-//Astar
