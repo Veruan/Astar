@@ -7,8 +7,6 @@
 
 #include "Physical.h"
 
-const char END = '3';
-
 // left, top, bottom, right, top-left, bottom-left, top-right, bottom-right
 const int x_offset[] = {-1, 0, 0, 1, -1, -1, 1, 1};
 const int y_offset[] = {0, -1, 1, 0, -1, 1, -1, 1};

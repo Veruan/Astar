@@ -3,6 +3,15 @@
 
 #include <vector>
 
+enum Fields
+{
+	END = '3',
+	START = '2',
+	WALL = '1',
+	EMPTY = '0'
+};
+
+
 class Physical
 {
 	private:
@@ -25,6 +34,10 @@ class Physical
 		void set_start(const std::pair<int, int>& position);
 
 		void set_end(const std::pair<int, int>& position);
+
+		void set_wall_horizontal(int row, int start, int end);
+		
+		void set_wall_vertical(int col, int start, int end);
 
 		char get_grid(std::pair<int, int>& position) const;
 

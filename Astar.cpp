@@ -58,12 +58,16 @@ void Astar(const Physical& physical)
 void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool** visited, bool** added, const Physical& physical)
 {
 	std::pair<int, int> position = current->get_position();
-
+	
+	// check for right, top, bottom, left distance 1 (times 10 for easier comparison)
 	for (int i = 0; i < 4; i++)
 	{
 		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
 
-		if(check_bounds(new_position, physical) && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
+		if (!check_bounds(new_position, physical))
+			continue;
+
+		if(physical.get_grid(new_position) != WALL && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
 		{
 			Node* neighbor = new Node(new_position, current, current->get_cost() + 10);
 			neighbors.push_back(neighbor);
@@ -72,11 +76,16 @@ void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool** visited,
 		}
 	}
 
+	
+	// check for corners (bigger distance sqrt(2) times 10 for easier comparison)
 	for (int i = 4; i < 8; i++)
 	{
 		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
 
-		if (check_bounds(new_position, physical) && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
+		if (!check_bounds(new_position, physical))
+			continue;
+
+		if (physical.get_grid(new_position) != WALL && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
 		{
 			Node* neighbor = new Node(new_position, current, current->get_cost() + 14);
 			neighbors.push_back(neighbor);
@@ -100,7 +109,7 @@ bool check_bounds(std::pair<int, int>&position, const Physical& physical)
 
 double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end)
 {
-	return sqrt(pow(end.first - position.first, 2) + pow(end.second - position.second, 2));
+	return 10 * (sqrt(pow(end.first - position.first, 2) + pow(end.second - position.second, 2)));
 }
 
 
