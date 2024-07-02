@@ -7,12 +7,12 @@
 int main(int argc, char *argv[])
 {	
 	//Commander commander;
-	Physical physical(5, 5);
+	Physical physical(40, 40);
 
 	physical.set_start({ 1, 1 });
-	physical.set_end({ 4, 3 });
+	physical.set_end({ 38, 27 });
 
-	physical.set_wall_vertical(3, 1, 3);
+	physical.set_wall_vertical(3, 1, 30);
 	//physical.set_wall_horizontal(2, 1, 3);
 
 	Astar(physical);
