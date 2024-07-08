@@ -39,7 +39,7 @@ class Physical
 		
 		void set_wall_vertical(int col, int start, int end);
 
-		char get_grid(std::pair<int, int>& position) const;
+		char get_grid(const std::pair<int, int>& position) const;
 
 		std::pair<int, int> get_start() const;
 

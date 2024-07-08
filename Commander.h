@@ -19,6 +19,14 @@ class Commander
 		Commander();
 
 		~Commander();
+
+		const Physical& get_physical() const;
+
+		Physical& modify_physical();
+
+		const Screen& get_screen() const;
+
+		Screen& modify_screen();
 		
 };
 

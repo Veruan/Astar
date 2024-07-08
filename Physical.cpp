@@ -6,35 +6,35 @@ Physical::Physical(int size_x, int size_y) : size_x(size_x), size_y(size_y), sta
 
 	for (auto& row : this->grid)
 	{
-		row.assign(size_x, '0');
+		row.assign(size_x, EMPTY);
 	}
 
-	this->grid[start.second][start.first] = '2';
-	this->grid[end.second][end.first] = '3';
+	this->grid[start.second][start.first] = START;
+	this->grid[end.second][end.first] = END;
 }
 
 
 Physical::~Physical()
 {
-
+	this->grid.clear();
 }
 
 
 void Physical::set_start(const std::pair<int, int>& position)
 {
-	this->grid[this->start.second][this->start.first] = '0';
+	this->grid[this->start.second][this->start.first] = EMPTY;
 
 	this->start = position;
-	this->grid[position.second][position.first] = '2';
+	this->grid[position.second][position.first] = START;
 }
 
 
 void Physical::set_end(const std::pair<int, int>& position)
 {
-	this->grid[this->end.second][this->end.first] = '0';
+	this->grid[this->end.second][this->end.first] = EMPTY;
 
 	this->end = position;
-	this->grid[position.second][position.first] = '3';
+	this->grid[position.second][position.first] = END;
 }
 
 
@@ -52,7 +52,7 @@ void Physical::set_wall_vertical(int col, int start, int end)
 }
 
 
-char Physical::get_grid(std::pair<int, int>& position) const
+char Physical::get_grid(const std::pair<int, int>& position) const
 {
 	return this->grid[position.second][position.first];
 }

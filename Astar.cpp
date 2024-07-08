@@ -3,94 +3,75 @@
 #include "AStar.h"
 #include "utility.h"
 
-void Astar(const Physical& physical)
+// TODO 
+// convert added to hash_map holding weak pointers?, where key is position, to later retrieve node's cost
+// and update it if it can be smaller. Also updating get_neighbors to also get end position not to have this weird shit
+// add_to_cost and keep it just plain better, also intorducing new constructor for node taking gcost and hcost together
+// maybe this will do something for not finding the shortest path currently? I certainly hope so...
+void Astar(Commander& commander)
 {
-	std::vector<Node*> used;
-	std::vector<Node*> path;
+	std::vector<std::shared_ptr<Node>> used;
+	std::vector<std::pair<int, int>> path;
 
 	{
-		bool **visited = allocate_2d_array(physical.get_size_x(), physical.get_size_y());
-		bool **added = allocate_2d_array(physical.get_size_x(), physical.get_size_y());
+		auto visited = allocate_2d_array(commander.get_physical().get_size_x(), commander.get_physical().get_size_y());
+		auto added = allocate_2d_array(commander.get_physical().get_size_x(), commander.get_physical().get_size_y());
 
 		std::unique_ptr<Heap> priority_queue = std::make_unique<Heap>();
-		std::vector<Node*> neighbors;
 
-		priority_queue->insert(physical.get_start(), nullptr, 0);
+		priority_queue->insert(commander.get_physical().get_start(), nullptr, 0, 0);
 	
 		while (!priority_queue->empty())
 		{
-			Node* current = priority_queue->extract_min();
+			auto current = priority_queue->extract_min();
 			std::pair<int, int> position = current->get_position();
 
 			used.push_back(current);
 			visited[position.second][position.first] = true;
 
-			if (physical.get_grid(position) == END)
+			if (commander.get_physical().get_grid(position) == END)
 				break;
 		
-			get_neighbors(current, neighbors, visited, added, physical);
-			for(Node* node : neighbors)
-			{
-				node->add_cost(hcost(node->get_position(), physical.get_end()));
-				priority_queue->insert(node);
-			}
+			get_neighbors(current, priority_queue, visited, added, commander.get_physical());
 
-			neighbors.clear();
+			commander.modify_screen().draw_grid(commander.get_physical(), added, visited);
 		}
-
-		delete_2d_array(physical.get_size_x(), physical.get_size_y(), &visited);
-		delete_2d_array(physical.get_size_x(), physical.get_size_y(), &added);
 	}
 	
 	reconstruct_path(used, path);
 
-	for (int i = path.size() - 1; i >= 0; i--)
-		std::cout << path[i]->get_position().first << ", " << path[i]->get_position().second << '\n';
-
-	for (Node* element : used)
-		delete element;
+	commander.modify_screen().draw_path(commander.get_physical(), path);
 
 	used.clear();
 	path.clear();
 }
 
 
-void get_neighbors(Node* current, std::vector<Node*>& neighbors, bool** visited, bool** added, const Physical& physical)
+void get_neighbors(std::shared_ptr<Node> current, std::unique_ptr<Heap>& priotirty_queue, std::unique_ptr<std::unique_ptr<bool[]>[]>& visited,
+	std::unique_ptr<std::unique_ptr<bool[]>[]>& added, const Physical& physical)
 {
 	std::pair<int, int> position = current->get_position();
 	
-	// check for right, top, bottom, left distance 1 (times 10 for easier comparison)
-	for (int i = 0; i < 4; i++)
-	{
-		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
-
-		if (!check_bounds(new_position, physical))
-			continue;
-
-		if(physical.get_grid(new_position) != WALL && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
-		{
-			Node* neighbor = new Node(new_position, current, current->get_cost() + 10);
-			neighbors.push_back(neighbor);
-
-			added[new_position.second][new_position.first] = true;
-		}
-	}
-
-	
+	// check for left, top, bottom, right distance 1 (times 10 for easier comparison)
 	// check for corners (bigger distance sqrt(2) times 10 for easier comparison)
-	for (int i = 4; i < 8; i++)
+
+	for (int i = 0; i < 8; i++)
 	{
 		std::pair<int, int> new_position = { position.first + x_offset[i], position.second + y_offset[i] };
 
-		if (!check_bounds(new_position, physical))
+		if (!check_bounds(new_position, physical) || visited[new_position.second][new_position.first])
 			continue;
 
-		if (physical.get_grid(new_position) != WALL && !visited[new_position.second][new_position.first] && !added[new_position.second][new_position.first])
+		if(physical.get_grid(new_position) != WALL && !added[new_position.second][new_position.first])
 		{
-			Node* neighbor = new Node(new_position, current, current->get_cost() + 14);
-			neighbors.push_back(neighbor);
+			std::shared_ptr<Node> neighbor = std::make_shared<Node>(new_position, current, current->get_gcost() + costs[i / 4],
+				hcost(new_position, physical.get_end()));
+
+			priotirty_queue->insert(neighbor);
 
 			added[new_position.second][new_position.first] = true;
+
+			neighbor = nullptr;
 		}
 	}
 }
@@ -109,16 +90,16 @@ bool check_bounds(std::pair<int, int>&position, const Physical& physical)
 
 double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end)
 {
-	return 10 * (sqrt(pow(end.first - position.first, 2) + pow(end.second - position.second, 2)));
+	return 10 * ( sqrt (pow(end.first - position.first, 2) + pow(end.second - position.second, 2) ) );
 }
 
 
-void reconstruct_path(std::vector<Node*>& used, std::vector<Node*>& path)
+void reconstruct_path(std::vector<std::shared_ptr<Node>>& used, std::vector<std::pair<int, int>>& path)
 {
-	Node* current = used[used.size() - 1];
+	std::shared_ptr<Node> current = used.back();
 	while (true)
 	{
-		path.push_back(current);
+		path.push_back(current->get_position());
 
 		// start reached
 		if (current->get_parent() == nullptr)
@@ -129,18 +110,13 @@ void reconstruct_path(std::vector<Node*>& used, std::vector<Node*>& path)
 }
 
 
-Node::Node(const std::pair<int, int>& position, Node *parent, double gcost) : position(position), parent(parent), cost(gcost)
+Node::Node(const std::pair<int, int>& position, std::shared_ptr<Node> parent, double gcost, double hcost) : position(position),
+	parent(parent), gcost(gcost), hcost(hcost), fcost(hcost + gcost)
 {}
 
 
 Node::~Node()
 {}
-
-
-void Node::add_cost(double hcost)
-{
-	this->cost += hcost;
-}
 
 
 const std::pair<int, int>& Node::get_position() const
@@ -149,15 +125,51 @@ const std::pair<int, int>& Node::get_position() const
 }
 
 
-Node* Node::get_parent() const
+std::shared_ptr<Node> Node::get_parent() const
 {
 	return this->parent;
 }
 
 
-double Node::get_cost() const
+double Node::get_gcost() const
 {
-	return this->cost;
+	return this->gcost;
+}
+
+
+double Node::get_hcost() const
+{
+	return this->hcost;
+}
+
+
+double Node::get_fcost() const
+{
+	return this->fcost;
+}
+
+
+void Node::set_gcost(const double gcost)
+{
+	this->gcost = gcost;
+}
+
+
+void Node::set_hcost(const double hcost)
+{
+	this->hcost = hcost;
+}
+
+
+void Node::update_fcost()
+{
+	this->fcost = this->gcost + this->hcost;
+}
+
+
+void Node::update_parent(std::shared_ptr<Node> parent)
+{
+	this->parent = parent;
 }
 
 
@@ -167,9 +179,6 @@ Heap::Heap() : size(0)
 
 Heap::~Heap()
 {
-	for (Node* element : this->elements)
-		delete element;
-
 	this->elements.clear();
 }
 
@@ -208,7 +217,7 @@ void Heap::check_bounds(bool& left, bool& right, int index) const
 }
 
 
-void Heap::heapify_down(int index) 
+void Heap::heapify_down(const int index)
 {
     bool left = false, right = false;
     this->check_bounds(left, right, index);
@@ -222,10 +231,10 @@ void Heap::heapify_down(int index)
     int smallest = index;
 
 	// technically u dont need to check for left cuz if it didnt return left exists but for clarity reasons
-    if (left && this->elements[left_index]->get_cost() < this->elements[smallest]->get_cost())
+    if (left && this->elements[left_index]->get_fcost() < this->elements[smallest]->get_fcost())
         smallest = left_index;
 
-    if (right && this->elements[right_index]->get_cost() < this->elements[smallest]->get_cost())
+    if (right && this->elements[right_index]->get_fcost() < this->elements[smallest]->get_fcost())
         smallest = right_index;
 
     if (smallest != index) 
@@ -236,14 +245,14 @@ void Heap::heapify_down(int index)
 }
 
 
-void Heap::heapify_up(int index)
+void Heap::heapify_up(const int index)
 {
 	if (index == 0)
 		return;
 
 	int parent_index = (index - 1) / 2;
 
-	if (this->elements[parent_index]->get_cost() > this->elements[index]->get_cost())
+	if (this->elements[parent_index]->get_fcost() > this->elements[index]->get_fcost())
 	{
 		std::swap(this->elements[parent_index], this->elements[index]);
 		heapify_up(parent_index);
@@ -251,9 +260,9 @@ void Heap::heapify_up(int index)
 }
 
 
-void Heap::insert(const std::pair<int, int>& position, Node *parent, const double cost)
+void Heap::insert(const std::pair<int, int>& position, std::shared_ptr<Node> parent, const double gcost, const double fcost)
 {
-	Node* element = new Node(position, parent, cost);
+	std::shared_ptr<Node> element = std::make_shared<Node>(position, parent, gcost, fcost);
 
 	this->elements.push_back(element);
 	this->size++;
@@ -262,7 +271,7 @@ void Heap::insert(const std::pair<int, int>& position, Node *parent, const doubl
 }
 
 
-void Heap::insert(Node* node)
+void Heap::insert(std::shared_ptr<Node> node)
 {
 	this->elements.push_back(node);
 	this->size++;
@@ -271,14 +280,14 @@ void Heap::insert(Node* node)
 }
 
 
-Node* Heap::extract_min()
+std::shared_ptr<Node> Heap::extract_min()
 {
 	if (this->size == 0)
 		return nullptr;
 
-	Node *smallest = this->elements[0];
+	std::shared_ptr<Node> smallest = this->elements[0];
 
-	this->elements[0] = this->elements[this->size - 1];
+	this->elements[0] = this->elements.back();
 
 	this->elements.pop_back();
 	this->size--;
@@ -286,4 +295,13 @@ Node* Heap::extract_min()
 	this->heapify_down(0);
 
 	return smallest;
+}
+
+
+void Heap::decrease_key(const int index, const double gcost)
+{
+	this->elements[index]->set_gcost(gcost);
+	this->elements[index]->update_fcost();
+
+	this->heapify_up(index);
 }
