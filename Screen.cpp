@@ -101,7 +101,7 @@ void Screen::draw_grid(const Physical& physical, std::unique_ptr<std::unique_ptr
 
 	SDL_RenderPresent(this->renderer);
 
-	SDL_Delay(5);
+	SDL_Delay(10);
 }
 
 

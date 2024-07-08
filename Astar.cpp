@@ -3,11 +3,6 @@
 #include "AStar.h"
 #include "utility.h"
 
-// TODO 
-// convert added to hash_map holding weak pointers?, where key is position, to later retrieve node's cost
-// and update it if it can be smaller. Also updating get_neighbors to also get end position not to have this weird shit
-// add_to_cost and keep it just plain better, also intorducing new constructor for node taking gcost and hcost together
-// maybe this will do something for not finding the shortest path currently? I certainly hope so...
 void Astar(Commander& commander)
 {
 	std::vector<std::shared_ptr<Node>> used;
@@ -16,6 +11,7 @@ void Astar(Commander& commander)
 	{
 		auto visited = allocate_2d_array(commander.get_physical().get_size_x(), commander.get_physical().get_size_y());
 		auto added = allocate_2d_array(commander.get_physical().get_size_x(), commander.get_physical().get_size_y());
+		std::unordered_map<std::pair<int, int>, std::weak_ptr<Node>, pair_hash> added_map;
 
 		std::unique_ptr<Heap> priority_queue = std::make_unique<Heap>();
 
@@ -32,7 +28,7 @@ void Astar(Commander& commander)
 			if (commander.get_physical().get_grid(position) == END)
 				break;
 		
-			get_neighbors(current, priority_queue, visited, added, commander.get_physical());
+			get_neighbors(current, priority_queue, visited, added, added_map, commander.get_physical());
 
 			commander.modify_screen().draw_grid(commander.get_physical(), added, visited);
 		}
@@ -48,7 +44,7 @@ void Astar(Commander& commander)
 
 
 void get_neighbors(std::shared_ptr<Node> current, std::unique_ptr<Heap>& priotirty_queue, std::unique_ptr<std::unique_ptr<bool[]>[]>& visited,
-	std::unique_ptr<std::unique_ptr<bool[]>[]>& added, const Physical& physical)
+	std::unique_ptr<std::unique_ptr<bool[]>[]>& added, std::unordered_map<std::pair<int, int>, std::weak_ptr<Node>, pair_hash>& added_map, const Physical& physical)
 {
 	std::pair<int, int> position = current->get_position();
 	
@@ -62,7 +58,13 @@ void get_neighbors(std::shared_ptr<Node> current, std::unique_ptr<Heap>& priotir
 		if (!check_bounds(new_position, physical) || visited[new_position.second][new_position.first])
 			continue;
 
-		if(physical.get_grid(new_position) != WALL && !added[new_position.second][new_position.first])
+		if (added[new_position.second][new_position.first])
+		{
+			update_node(current, new_position, added_map, priotirty_queue, i / 4);
+			continue;
+		}
+
+		if(physical.get_grid(new_position) != WALL)
 		{
 			std::shared_ptr<Node> neighbor = std::make_shared<Node>(new_position, current, current->get_gcost() + costs[i / 4],
 				hcost(new_position, physical.get_end()));
@@ -70,6 +72,7 @@ void get_neighbors(std::shared_ptr<Node> current, std::unique_ptr<Heap>& priotir
 			priotirty_queue->insert(neighbor);
 
 			added[new_position.second][new_position.first] = true;
+			added_map[new_position] = neighbor;
 
 			neighbor = nullptr;
 		}
@@ -88,9 +91,24 @@ bool check_bounds(std::pair<int, int>&position, const Physical& physical)
 }
 
 
+void update_node(const std::shared_ptr<Node>& current, std::pair<int, int>& new_position, 
+	std::unordered_map<std::pair<int, int>, std::weak_ptr<Node>, pair_hash>& added_map, std::unique_ptr<Heap>& priority_queue, const int cost_index)
+{
+	std::shared_ptr<Node> existing_node = added_map.at(new_position).lock();
+	double new_gcost = current->get_gcost() + costs[cost_index];
+
+	if (new_gcost < existing_node->get_gcost())
+		priority_queue->decrease_key(priority_queue->get_heap_index(existing_node), new_gcost, current);
+
+	existing_node = nullptr;
+}
+
+
 double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end)
 {
-	return 10 * ( sqrt (pow(end.first - position.first, 2) + pow(end.second - position.second, 2) ) );
+	int dx = abs(position.first - end.first);
+	int dy = abs(position.second - end.second);
+	return 10 * (dx + dy) + (14 - 2 * 10) * fmin(dx, dy);
 }
 
 
@@ -298,10 +316,21 @@ std::shared_ptr<Node> Heap::extract_min()
 }
 
 
-void Heap::decrease_key(const int index, const double gcost)
+void Heap::decrease_key(const int index, const double gcost, std::shared_ptr<Node> new_parent)
 {
 	this->elements[index]->set_gcost(gcost);
 	this->elements[index]->update_fcost();
+	this-> elements[index]->update_parent(new_parent);
 
 	this->heapify_up(index);
+}
+
+
+int Heap::get_heap_index(std::shared_ptr<Node> node)
+{
+	for (int i = 0; i < this->size; i++)
+	{
+		if (this->elements[i]->get_position().first == node->get_position().first && this->elements[i]->get_position().second == node->get_position().second)
+			return i;
+	}
 }

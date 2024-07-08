@@ -13,6 +13,16 @@ const int y_offset[] = {0, -1, 1, 0, -1, 1, -1, 1};
 
 const int costs[] = { 10, 14 };
 
+struct pair_hash 
+{
+	template <class T1, class T2>
+	std::size_t operator()(const std::pair<T1, T2>& pair) const 
+	{
+		return std::hash<T1>()(pair.first) ^ (std::hash<T2>()(pair.second) << 1);
+	}
+};
+
+
 class Node
 {
 	private:
@@ -77,7 +87,10 @@ class Heap
 
 		std::shared_ptr<Node> extract_min();
 
-		void decrease_key(const int index, const double gcost);
+		void decrease_key(const int index, const double gcost, std::shared_ptr<Node> new_parent);
+
+		// IDIOTIC FUNCTION TO CHANGE A$AP
+		int get_heap_index(std::shared_ptr<Node> node);
 };
 
 
@@ -86,9 +99,12 @@ void Astar(Commander& commander);
 
 
 void get_neighbors(std::shared_ptr<Node> current, std::unique_ptr<Heap>& priotirty_queue, std::unique_ptr<std::unique_ptr<bool[]>[]>& visited,
-	std::unique_ptr<std::unique_ptr<bool[]>[]>& added, const Physical& physical);
+	std::unique_ptr<std::unique_ptr<bool[]>[]>& added, std::unordered_map<std::pair<int, int>, std::weak_ptr<Node>, pair_hash>& added_map, const Physical& physical);
 
 bool check_bounds(std::pair<int, int>& position, const Physical& physical);
+
+void update_node(const std::shared_ptr<Node>& current, std::pair<int, int>& new_position,
+	std::unordered_map<std::pair<int, int>, std::weak_ptr<Node>, pair_hash>& added_map, std::unique_ptr<Heap>& priority_queue, const int cost_index);
 
 
 double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end);
