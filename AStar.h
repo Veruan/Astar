@@ -67,6 +67,8 @@ class Heap
 		int size;
 		std::vector<std::shared_ptr<Node>> elements;
 
+		std::unordered_map<std::pair<int, int>, int, pair_hash> position_to_index;
+
 	public:
 
 		Heap();
@@ -89,8 +91,9 @@ class Heap
 
 		void decrease_key(const int index, const double gcost, std::shared_ptr<Node> new_parent);
 
-		// IDIOTIC FUNCTION TO CHANGE A$AP
 		int get_heap_index(std::shared_ptr<Node> node);
+
+		void swap_position_to_index_values(const int parent_index, const int child_index);
 };
 
 

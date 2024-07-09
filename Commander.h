@@ -27,7 +27,6 @@ class Commander
 		const Screen& get_screen() const;
 
 		Screen& modify_screen();
-		
 };
 
 #endif

@@ -35,6 +35,10 @@ class Physical
 
 		void set_end(const std::pair<int, int>& position);
 
+		void set_wall(const std::pair<int, int>& position);
+
+		void set_empty(const std::pair<int, int>& position);
+
 		void set_wall_horizontal(int row, int start, int end);
 		
 		void set_wall_vertical(int col, int start, int end);

@@ -5,6 +5,8 @@
 
 void Astar(Commander& commander)
 {
+	bool path_exists;
+
 	std::vector<std::shared_ptr<Node>> used;
 	std::vector<std::pair<int, int>> path;
 
@@ -32,9 +34,13 @@ void Astar(Commander& commander)
 
 			commander.modify_screen().draw_grid(commander.get_physical(), added, visited);
 		}
+
+		path_exists = !priority_queue->empty();
+		added_map.clear();
 	}
 	
-	reconstruct_path(used, path);
+	if(path_exists)
+		reconstruct_path(used, path);
 
 	commander.modify_screen().draw_path(commander.get_physical(), path);
 
@@ -198,6 +204,7 @@ Heap::Heap() : size(0)
 Heap::~Heap()
 {
 	this->elements.clear();
+	this->position_to_index.clear();
 }
 
 
@@ -237,6 +244,10 @@ void Heap::check_bounds(bool& left, bool& right, int index) const
 
 void Heap::heapify_down(const int index)
 {
+	// if heap has 0 or 1 elements, skip -> no nodes to check
+	if (this->size <= 1)
+		return;
+
     bool left = false, right = false;
     this->check_bounds(left, right, index);
 
@@ -257,7 +268,9 @@ void Heap::heapify_down(const int index)
 
     if (smallest != index) 
 	{
-        std::swap(elements[index], elements[smallest]);
+		this->swap_position_to_index_values(index, smallest);
+        std::swap(this->elements[index], this->elements[smallest]);
+
         heapify_down(smallest);
     }
 }
@@ -265,14 +278,17 @@ void Heap::heapify_down(const int index)
 
 void Heap::heapify_up(const int index)
 {
-	if (index == 0)
+	// if root or heap has 0 or 1 elements, skip -> no parents to check/no nodes to check
+	if (this->size <= 1 || index == 0)
 		return;
 
 	int parent_index = (index - 1) / 2;
 
 	if (this->elements[parent_index]->get_fcost() > this->elements[index]->get_fcost())
 	{
+		this->swap_position_to_index_values(parent_index, index);
 		std::swap(this->elements[parent_index], this->elements[index]);
+
 		heapify_up(parent_index);
 	}
 }
@@ -285,6 +301,8 @@ void Heap::insert(const std::pair<int, int>& position, std::shared_ptr<Node> par
 	this->elements.push_back(element);
 	this->size++;
 
+	this->position_to_index[position] = this->size - 1;
+
 	this->heapify_up(this->size - 1);
 }
 
@@ -294,18 +312,25 @@ void Heap::insert(std::shared_ptr<Node> node)
 	this->elements.push_back(node);
 	this->size++;
 
+	this->position_to_index[node->get_position()] = this->size - 1;
+
 	this->heapify_up(this->size - 1);
 }
 
 
-std::shared_ptr<Node> Heap::extract_min()
+std::shared_ptr<Node> Heap::extract_min() 
 {
 	if (this->size == 0)
 		return nullptr;
 
 	std::shared_ptr<Node> smallest = this->elements[0];
+	this->position_to_index.erase(smallest->get_position());
 
-	this->elements[0] = this->elements.back();
+	if (this->size > 1) 
+	{
+		this->elements[0] = this->elements.back();
+		this->position_to_index.at(this->elements[0]->get_position()) = 0;
+	}
 
 	this->elements.pop_back();
 	this->size--;
@@ -320,7 +345,7 @@ void Heap::decrease_key(const int index, const double gcost, std::shared_ptr<Nod
 {
 	this->elements[index]->set_gcost(gcost);
 	this->elements[index]->update_fcost();
-	this-> elements[index]->update_parent(new_parent);
+	this->elements[index]->update_parent(new_parent);
 
 	this->heapify_up(index);
 }
@@ -328,9 +353,12 @@ void Heap::decrease_key(const int index, const double gcost, std::shared_ptr<Nod
 
 int Heap::get_heap_index(std::shared_ptr<Node> node)
 {
-	for (int i = 0; i < this->size; i++)
-	{
-		if (this->elements[i]->get_position().first == node->get_position().first && this->elements[i]->get_position().second == node->get_position().second)
-			return i;
-	}
+	return this->position_to_index.at(node->get_position());
+}
+
+
+void Heap::swap_position_to_index_values(const int parent_index, const int child_index)
+{
+	this->position_to_index.at(this->elements[parent_index]->get_position()) = child_index;
+	this->position_to_index.at(this->elements[child_index]->get_position()) = parent_index;
 }

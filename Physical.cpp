@@ -38,6 +38,18 @@ void Physical::set_end(const std::pair<int, int>& position)
 }
 
 
+void Physical::set_wall(const std::pair<int, int>& position)
+{
+	this->grid[position.second][position.first] = WALL;
+}
+
+
+void Physical::set_empty(const std::pair<int, int>& position)
+{
+	this->grid[position.second][position.first] = EMPTY;
+}
+
+
 void Physical::set_wall_horizontal(int row, int start, int end)
 {
 	for (int i = start; i <= end; i++)
