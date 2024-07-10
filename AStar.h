@@ -116,23 +116,3 @@ double hcost(const std::pair<int, int>& position, const std::pair<int, int>& end
 void reconstruct_path(std::vector<std::shared_ptr<Node>>& used, std::vector<std::pair<int, int>>& path);
 
 #endif
-
-
-/*
-added_map = std::unordered_map<std::pair<int, int>, std::weak_ptr<Node>>;
-
-if (added[new_position.second][new_position.first])
-		{
-			added_map.at(new_position).lock();
-			double new_cost = current->get_cost();
-
-			if (new_cost > added_map.at(new_position).get_cost())
-			{
-				added_map.at(new_position).set_gcost(current->get_gcost());
-				added_map.at(new_position).update_fcost();
-				added_map.at(new_position).update_parent(current);
-				// update heap?
-				// unlock
-			}
-		}
-*/

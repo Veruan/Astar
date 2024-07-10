@@ -46,7 +46,76 @@ void Screen::set_color(const color_t& color)
 }
 
 
-void Screen::idle(Physical& physical)
+void Screen::menu()
+{
+	if (TTF_Init() == -1)
+		return;
+
+	SDL_Color color = { 180, 180, 180, 255 };
+	TTF_Font* large_font = TTF_OpenFont("./PTSansNarrow-Bold.ttf", 32);
+	TTF_Font* small_font = TTF_OpenFont("./PTSansNarrow-Bold.ttf", 24);
+
+	SDL_Texture* title_texture = render_text("A* SIMULATION TOOL", large_font, color);
+	SDL_Texture* instructions_texture = render_text("0 - erase  |  1 - draw wall  |  2 - set start  |  3 - set end  |  ENTER - run  |  ESC - quit", small_font, color);
+	SDL_Texture* prompt_texture = render_text("Press Enter to continue...", small_font, color);
+
+	int w, h;
+
+	SDL_QueryTexture(title_texture, NULL, NULL, &w, &h);
+	SDL_Rect titleRect = { (this->width - w) / 2, 50, w, h };
+	SDL_RenderCopy(renderer, title_texture, NULL, &titleRect);
+
+	SDL_QueryTexture(instructions_texture, NULL, NULL, &w, &h);
+	SDL_Rect instructionsRect = { (this->width - w) / 2, 150, w, h };
+	SDL_RenderCopy(renderer, instructions_texture, NULL, &instructionsRect);
+
+	SDL_QueryTexture(prompt_texture, NULL, NULL, &w, &h);
+	SDL_Rect promptRect = { (this->width - w) / 2, 250, w, h };
+	SDL_RenderCopy(renderer, prompt_texture, NULL, &promptRect);
+
+	SDL_RenderPresent(renderer);
+
+	bool over = false;
+
+	while (!over)
+	{
+		SDL_Event event{ };
+
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN)
+				over = true;
+		}
+	}
+
+	SDL_RenderClear(renderer);
+
+	SDL_DestroyTexture(title_texture);
+	SDL_DestroyTexture(instructions_texture);
+	SDL_DestroyTexture(prompt_texture);
+
+	TTF_CloseFont(small_font);
+	TTF_CloseFont(large_font);
+	TTF_Quit();
+}
+
+
+SDL_Texture* Screen::render_text(const std::string& message, TTF_Font* font, SDL_Color color) 
+{
+	SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), color);
+	if (surface == nullptr) 
+		return nullptr;
+
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+	if (texture == nullptr)
+		return nullptr;
+
+	SDL_FreeSurface(surface);
+	return texture;
+}
+
+
+void Screen::idle(Physical& physical, bool* over)
 {
 	bool start = false;
 	this->set_square_size(physical);
@@ -57,12 +126,12 @@ void Screen::idle(Physical& physical)
 
 		this->draw_grid_idle(physical);
 
-		this->event_handler(&event, physical, &start);
+		this->event_handler(&event, physical, &start, over);
 	}
 }
 
 
-void Screen::event_handler(SDL_Event* event, Physical& physical, bool* start)
+void Screen::event_handler(SDL_Event* event, Physical& physical, bool* start, bool* over)
 {
 	while (SDL_PollEvent(event))
 	{
@@ -74,7 +143,7 @@ void Screen::event_handler(SDL_Event* event, Physical& physical, bool* start)
 		
 		if (event->type == SDL_KEYDOWN)
 		{
-			this->handle_keyboard(event, start);
+			this->handle_keyboard(event, start, over);
 		}
 	}
 }
@@ -108,7 +177,7 @@ void Screen::handle_mouse(SDL_Event *event, Physical& physical)
 }
 
 
-void Screen::handle_keyboard(SDL_Event* event, bool *start)
+void Screen::handle_keyboard(SDL_Event* event, bool *start, bool* over)
 {
 	switch (event->key.keysym.sym)
 	{
@@ -129,6 +198,11 @@ void Screen::handle_keyboard(SDL_Event* event, bool *start)
 		break;
 
 	case SDLK_RETURN:
+		*start = true;
+		break;
+
+	case SDLK_ESCAPE:
+		*over = true;
 		*start = true;
 		break;
 	}
@@ -198,7 +272,7 @@ void Screen::draw_grid_idle(const Physical& physical)
 		}
 	}
 
-	this->set_color(YELLOW);
+	this->set_color(GREEN);
 	SDL_Rect fill_rect_start = { physical.get_start().first * this->rect_size_x, physical.get_start().second * this->rect_size_y, this->rect_size_x, this->rect_size_y };
 	SDL_RenderFillRect(this->renderer, &fill_rect_start);
 

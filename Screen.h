@@ -2,9 +2,11 @@
 #define ASTAR_SCREEN_H
 
 #include <vector>
+#include <string>
 #include <memory>
+#include <SDL.h>
+#include <SDL_ttf.h>
 
-#include "SDL.h"
 #include "Physical.h"
 
 enum OPTIONS
@@ -63,13 +65,17 @@ class Screen
 
 		void set_color(const color_t& color);
 
-		void idle(Physical& physical);
+		void menu();
 
-		void event_handler(SDL_Event* event, Physical& physical, bool* start);
+		SDL_Texture* render_text(const std::string& message, TTF_Font* font, SDL_Color color);
+
+		void idle(Physical& physical, bool *over);
+
+		void event_handler(SDL_Event* event, Physical& physical, bool* start, bool* over);
 
 		void handle_mouse(SDL_Event* event, Physical& physical);
 
-		void handle_keyboard(SDL_Event* event, bool* start);
+		void handle_keyboard(SDL_Event* event, bool* start, bool* over);
 
 		void extract_square_coords(int* x, int* y);
 
