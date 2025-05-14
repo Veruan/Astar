@@ -22,7 +22,7 @@ To run the project, compile the source files with the SDL2 library, the SDL2_ttf
 <li>You can draw the labyrinth as you like, then press Enter to run.</li>
 
 <li>
-<img src="./assets/visited" alt="Priority Queue and Visited Elements" width="500"><br>
+<img src="./assets/visited.png" alt="Priority Queue and Visited Elements" width="500"><br>
 The light-brown colored grid elements are those added to the priority queue for evaluation.  
 The dark-red colored grid elements are those already evaluated and visited by the algorithm.
 </li>
