@@ -1,41 +1,47 @@
-Welcome to A* algorithm visualisation program
+# A* Algorithm Visualisation Program
 
-The current executable in the repo is compiled for Windows.
+The current executable in the repo is compiled for **Windows**.
 
-To run the project, compile the source files with the SDL2 library, the SDL2_ttf extension library, and include `SDL2.dll`, `SDL2_ttf.dll`, and font files.
+To run the project, compile the source files with the **SDL2 library**, the **SDL2_ttf extension**, and include the following files:
+- `SDL2.dll`
+- `SDL2_ttf.dll`
+- Font files  `*.ttf`
 
 ---
 
 ## OVERVIEW
 
-<ul>  
-<li>
-<b>Menu:</b><br>
-<img src="./assets/menu.png" alt="Menu" width="500">
+<ul>
+
+<li><b>1. Menu</b><br><br>
+This is the main menu of the application.
+<br><br>
+<img src="./assets/menu.png" alt="Menu" width="1000">
 </li>
 
-<li>
-<b>Simulation:</b><br>
-<img src="./assets/simulation.png" alt="Simulation" width="500">
+<li><b>2. Simulation</b>
+<ul>
 
-<ol>
-<li>You can draw the labyrinth as you like, then press Enter to run.</li>
-
-<li>
-<img src="./assets/visited.png" alt="Priority Queue and Visited Elements" width="500"><br>
-The light-brown colored grid elements are those added to the priority queue for evaluation.  
-The dark-red colored grid elements are those already evaluated and visited by the algorithm.
+<li><b>2.1 Main View</b><br><br>
+You can draw the labyrinth as you like, then press <kbd>Enter</kbd> to run the simulation.
+<br><br>
+<img src="./assets/simulation.png" alt="Simulation Main View" width="1000">
 </li>
 
-<li>
-The light-brown colored grid elements are the ones added to the priority queue for evaluation.  
-The dark-red ones are already evaluated and visited.
+<li><b>2.2 Visited & Priority Queue</b><br><br>
+The light-brown colored grid elements are those added to the **priority queue** for evaluation.  
+The dark-red colored grid elements are those **already evaluated and visited** by the algorithm.
+<br><br>
+<img src="./assets/visited.png" alt="Visited Nodes" width="1000">
 </li>
 
-<li>
-<img src="./assets/path.png" alt="Shortest Path" width="500"><br>
-At the end, the shortest path between two points is marked in blue.
+<li><b>2.3 Final Path</b><br><br>
+At the end, the <strong>shortest path</strong> between the start and end points is marked in <strong>blue</strong>.
+<br><br>
+<img src="./assets/path.png" alt="Final Path" width="1000">
 </li>
-</ol>
+
+</ul>
 </li>
+
 </ul>
